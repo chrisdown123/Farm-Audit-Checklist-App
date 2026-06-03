@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pig Unit Audit Wizard v27</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#17202a;background:#f4f6f8}body{margin:0;background:#f4f6f8}.wrap{max-width:760px;margin:0 auto;padding:18px}.card{background:white;border-radius:18px;padding:20px;margin:12px 0;box-shadow:0 2px 14px rgba(0,0,0,.08)}h1{font-size:28px;margin:0 0 8px}h2{font-size:24px;margin:0 0 12px}.status{font-size:15px;padding:10px;border-radius:10px;background:#ffecec;color:#8a1f1f;margin:10px 0}.ready{background:#e9f8ee;color:#145c2c}.warn{background:#fff6db;color:#735700}label{font-weight:700;display:block;margin-top:14px;font-size:17px}select,input,textarea{width:100%;box-sizing:border-box;font-size:19px;padding:14px;border:1px solid #ccd3da;border-radius:12px;margin-top:6px;background:#fff}textarea{min-height:110px}.row{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:14px;padding:16px 18px;font-size:20px;font-weight:800;margin:8px 0;cursor:pointer}.primary{background:#1463ff;color:#fff}.yes{background:#16803c;color:#fff;flex:1}.no{background:#c9342f;color:#fff;flex:1}.secondary{background:#e8edf3;color:#111}.small{font-size:15px;padding:10px 12px}.danger{background:#a51f1f;color:#fff}.hidden{display:none!important}.progress{height:12px;border-radius:999px;background:#dfe5ea;overflow:hidden}.bar{height:100%;background:#1463ff;width:0}.qtext{font-size:25px;font-weight:800;line-height:1.25;margin:15px 0}.pill{display:inline-block;border-radius:999px;padding:7px 10px;background:#eef2f6;margin:4px 0;font-weight:700}.crit{background:#ffe0df;color:#8a1f1f}.photo{max-width:100%;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #e2e6ea;padding:8px;text-align:left;vertical-align:top}.footer{font-size:13px;color:#667;margin-top:14px}#adminBtn{margin-top:22px;width:100%;font-size:16px;padding:12px;background:#f1f3f5;color:#555}.adminq{border:1px solid #e1e5ea;border-radius:12px;padding:12px;margin:10px 0;background:#fafbfc}.adminq textarea{font-size:16px}.notice{font-size:16px;background:#fff6db;border-radius:12px;padding:12px;margin-top:10px}</style>
+</head>
+<body>
+<div class="wrap">
+<div id="startScreen" class="card">
+<h1>Pig Unit Audit Wizard</h1>
+<div id="jsStatus" class="status">JavaScript has not started yet</div>
+<label for="farmSelect">Farm</label>
+<select id="farmSelect">
+<option value="">Select farm...</option>
+<option>Allensford</option><option>Burrowton</option><option>Copse</option><option>Enfield</option><option>Exton</option><option>Gearns</option><option>Hayes</option><option>Hayne</option><option>Leach Mousehole</option><option>Leach Spence Cross</option><option>Lincolns</option><option>Manor Farm</option><option>Mill Tree</option><option>Nick Marshall</option><option>Orchard Cottage</option><option>Patchington</option><option>Thorn</option><option>Tidball</option><option>Weaver's Meadow</option>
+</select>
+<label for="inspector">Inspector name</label><input id="inspector" autocomplete="name" placeholder="Enter inspector name">
+<label for="auditDate">Audit date</label><input id="auditDate" type="date">
+<button id="startBtn" class="btn primary" onclick="startAudit();return false;">Start Audit</button>
+<div id="startMsg" class="notice hidden"></div>
+<button id="adminBtn" onclick="openAdmin();return false;">Admin</button>
+</div>
+
+<div id="auditScreen" class="card hidden">
+<div class="row" style="align-items:center;justify-content:space-between"><span id="qCounter" class="pill"></span><span id="critPill" class="pill crit hidden">CRITICAL</span></div>
+<div class="progress"><div id="progBar" class="bar"></div></div>
+<div id="questionText" class="qtext"></div>
+<div class="row"><button class="btn yes" onclick="answerYes();return false;">YES</button><button class="btn no" onclick="answerNo();return false;">NO</button></div>
+<div id="noPanel" class="hidden">
+<label>Problem / comments</label><textarea id="comments" placeholder="Describe the issue..."></textarea>
+<label>Action required</label><textarea id="action" placeholder="What needs doing?"></textarea>
+<label>Action by date</label><input id="dueDate" type="date">
+<label>Photos</label>
+<div class="row"><button class="btn secondary" onclick="document.getElementById('cameraInput').click();return false;">Take Photo</button><button class="btn secondary" onclick="document.getElementById('uploadInput').click();return false;">Upload Photo</button></div>
+<input id="cameraInput" class="hidden" type="file" accept="image/*" capture="environment" multiple onchange="addPhotos(this.files)">
+<input id="uploadInput" class="hidden" type="file" accept="image/*" multiple onchange="addPhotos(this.files)">
+<div id="photoPreview"></div>
+<button id="nextBtn" class="btn primary" onclick="nextAfterNo();return false;">Next</button>
+</div>
+<div class="row"><button class="btn secondary" onclick="goBack();return false;">Back</button></div>
+<div id="auditMsg" class="notice hidden"></div>
+</div>
+
+<div id="finishScreen" class="card hidden">
+<h2>Audit Complete</h2>
+<div id="summary"></div>
+<button class="btn primary" onclick="saveReport();return false;">Save Report File</button>
+<button class="btn secondary" onclick="printReport();return false;">Print / Save PDF</button>
+<button class="btn secondary" onclick="emailSummary();return false;">Prepare Email</button>
+<button class="btn secondary" onclick="restart();return false;">New Audit</button>
+<div class="footer">For email attachments, save the report file first, then attach it manually if your phone/browser does not attach it automatically.</div>
+</div>
+
+<div id="adminScreen" class="card hidden">
+<h2>Admin</h2>
+<div id="pinPanel"><label>PIN</label><input id="pinInput" inputmode="numeric" placeholder="Enter PIN"><button class="btn primary" onclick="checkPin();return false;">Unlock</button></div>
+<div id="adminPanel" class="hidden">
+<label>Farms, one per line</label><textarea id="farmEditor"></textarea><button class="btn primary" onclick="saveFarms();return false;">Save Farms</button>
+<h2>Questions</h2><div id="questionEditor"></div>
+<button class="btn primary" onclick="saveQuestions();return false;">Save Questions</button>
+<button class="btn secondary" onclick="resetQuestions();return false;">Reset Questions</button>
+</div>
+<button class="btn secondary" onclick="closeAdmin();return false;">Close Admin</button>
+</div>
+</div>
+<script>
+(function(){
+'use strict';
+var defaultFarms=['Allensford','Burrowton','Copse','Enfield','Exton','Gearns','Hayes','Hayne','Leach Mousehole','Leach Spence Cross','Lincolns','Manor Farm','Mill Tree','Nick Marshall','Orchard Cottage','Patchington','Thorn','Tidball',"Weaver's Meadow"];
+var defaultQuestions=[
+{n:1,t:'Dead pigs in locked bins/incinerator & not visible?',c:true},{n:2,t:'Is the dead bin securely locked?',c:true},{n:3,t:'Are all drugs/vaccines/old bottles locked away?',c:true},{n:4,t:'Is the Medicine Record Book up to date?',c:true},{n:5,t:'Housing Hygiene: Are individual and sick pens satisfactory?',c:true},{n:6,t:'Did you confirm satisfactory water flow rates?',c:true},{n:7,t:'Do all pens have ample bedding/enrichment provided?',c:true},{n:8,t:'Can you confirm that no pens are overstocked?',c:true},{n:9,t:'Are all buildings lockable and locked at night?',c:true},{n:10,t:'Has loading bay area been scanned (Thermal)?',c:true},{n:11,t:'Has sick pen area been scanned (Thermal)?',c:true},{n:12,t:'Is a ventilation failure alarm system in place?',c:true},{n:13,t:'Is the unit free of evidence of blood from euthanasia?',c:true},{n:14,t:'Is the unit free of any pigs with visible ruptures?',c:true},{n:15,t:'Lameness: Is the unit free of pigs requiring euthanasia?',c:true},{n:16,t:'Is the unit free of cut tails on floors / surfaces?',c:true},{n:17,t:'Is the captive bolt working/maintained correctly?',c:true},{n:18,t:'Staff confirm manual blunt force trauma is NOT used?',c:true},{n:19,t:'Are manipulative/enrichment materials provided?',c:true},{n:20,t:'Is a clear Emergency Action Plan displayed?',c:true},
+{n:21,t:'Clean boots/overalls provided for visit?',c:false},{n:22,t:'Visitor book filled in upon arrival?',c:false},{n:23,t:'Site Standards: Loading bay & alleyways clean/tidy?',c:false},{n:24,t:'Is the site currently free of vermin?',c:false},{n:25,t:'Are pens free of wasted food?',c:false},{n:26,t:'Area under feed silos clean/free of waste?',c:false},{n:27,t:'Are all feeders in good working condition?',c:false},{n:28,t:'Are all pens currently serviceable?',c:false},{n:29,t:'Are all pens currently being used?',c:false},{n:30,t:'Have main pig buildings been scanned (Thermal)?',c:false},{n:31,t:'Ventilation systems/fans running correctly?',c:false},{n:32,t:'Pens free of draughts and damp patches?',c:false},{n:33,t:'General air quality (dust/gas) satisfactory?',c:false},{n:34,t:'Light intensity at least 40 lux for 8 hours daily?',c:false},{n:35,t:'All light fixtures and windows maintained?',c:false},{n:36,t:'Lighting effective for full animal inspection?',c:false},{n:37,t:'Are floors/slats in good condition to prevent injury?',c:false},{n:38,t:'Is there a pest control programme documented?',c:false},{n:39,t:'Are staff training records up to date?',c:false},{n:40,t:"Is the farm's identification and register up to date?",c:false}
+];
+var farms=load('pigAuditFarmsV27', defaultFarms).sort(function(a,b){return a.localeCompare(b)});
+var questions=load('pigAuditQuestionsV27', defaultQuestions);
+var answers=[], idx=0, audit={};
+function el(id){return document.getElementById(id)}
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(d))}catch(e){return JSON.parse(JSON.stringify(d))}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function show(id){['startScreen','auditScreen','finishScreen','adminScreen'].forEach(function(x){el(x).classList.add('hidden')});el(id).classList.remove('hidden')}
+function msg(id,text){el(id).textContent=text;el(id).classList.remove('hidden')}
+function clearMsg(id){el(id).textContent='';el(id).classList.add('hidden')}
+function iso(d){return new Date(d).toISOString().slice(0,10)}
+function plus7(dateStr){var d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+7);return iso(d)}
+function safeName(s){return String(s||'Farm').replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')}
+function populateFarms(){var fs=el('farmSelect');var current=fs.value;fs.innerHTML='<option value="">Select farm...</option>';farms.slice().sort(function(a,b){return a.localeCompare(b)}).forEach(function(f){var o=document.createElement('option');o.textContent=f;o.value=f;fs.appendChild(o)});if(current)fs.value=current}
+window.startAudit=function(){clearMsg('startMsg');var farm=el('farmSelect').value, inspector=el('inspector').value.trim(), date=el('auditDate').value;if(!farm){msg('startMsg','Please select a farm.');return}if(!inspector){msg('startMsg','Please enter inspector name.');return}if(!date){msg('startMsg','Please enter audit date.');return}audit={farm:farm,inspector:inspector,date:date};answers=questions.map(function(q){return {n:q.n,t:q.t,c:q.c,a:null,comments:'',action:'',due:'',photos:[]}});idx=0;renderQuestion();show('auditScreen')};
+function renderQuestion(){clearMsg('auditMsg');var q=questions[idx];el('qCounter').textContent='Question '+(idx+1)+' of '+questions.length;el('progBar').style.width=(idx/questions.length*100)+'%';el('questionText').textContent=q.t;el('critPill').classList.toggle('hidden',!q.c);el('noPanel').classList.add('hidden');el('comments').value=answers[idx].comments||'';el('action').value=answers[idx].action||'';el('dueDate').value=answers[idx].due||plus7(audit.date);renderPhotos()}
+window.answerYes=function(){answers[idx].a='YES';answers[idx].comments='';answers[idx].action='';answers[idx].due='';answers[idx].photos=[];advance()};
+window.answerNo=function(){answers[idx].a='NO';if(!answers[idx].due)answers[idx].due=plus7(audit.date);el('dueDate').value=answers[idx].due;el('noPanel').classList.remove('hidden')};
+window.nextAfterNo=function(){var c=el('comments').value.trim();if(!c){msg('auditMsg','Please enter comments for a NO answer.');return}answers[idx].a='NO';answers[idx].comments=c;answers[idx].action=el('action').value.trim();answers[idx].due=el('dueDate').value;advance()};
+function advance(){if(idx<questions.length-1){idx++;renderQuestion()}else finish()}
+window.goBack=function(){if(idx>0){idx--;renderQuestion()}else show('startScreen')};
+function finish(){el('progBar').style.width='100%';show('finishScreen');el('summary').innerHTML=makeSummary()}
+function score(){return answers.filter(function(a){return a.a==='YES'}).length}
+function failedCritical(){return answers.filter(function(a){return a.a==='NO'&&a.c})}
+function failedAll(){return answers.filter(function(a){return a.a==='NO'})}
+function status(){return failedCritical().length?'FAIL':'PASS'}
+function makeSummary(){var fails=failedAll();var html='<p><b>Farm:</b> '+audit.farm+'<br><b>Date:</b> '+audit.date+'<br><b>Inspector:</b> '+audit.inspector+'</p><p><b>Score:</b> '+score()+' / '+questions.length+'<br><b>Status:</b> '+status()+'</p>';if(fails.length){html+='<h3>Actions / Failures</h3><table><tr><th>#</th><th>Question</th><th>Comments</th><th>Due</th></tr>';fails.forEach(function(f){html+='<tr><td>'+f.n+(f.c?' CRITICAL':'')+'</td><td>'+esc(f.t)+'</td><td>'+esc(f.comments)+'</td><td>'+esc(f.due)+'</td></tr>'});html+='</table>'}else html+='<p>No failures recorded.</p>';return html}
+function esc(s){return String(s||'').replace(/[&<>]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]})}
+window.addPhotos=function(files){Array.prototype.slice.call(files||[]).forEach(function(file){var r=new FileReader();r.onload=function(e){answers[idx].photos.push({name:file.name,data:e.target.result});renderPhotos()};r.readAsDataURL(file)});el('cameraInput').value='';el('uploadInput').value=''};
+function renderPhotos(){var p=el('photoPreview');p.innerHTML='';(answers[idx].photos||[]).forEach(function(ph,i){var d=document.createElement('div');d.innerHTML='<img class="photo" src="'+ph.data+'"><button class="btn small danger" onclick="removePhoto('+i+');return false;">Remove photo</button>';p.appendChild(d)})}
+window.removePhoto=function(i){answers[idx].photos.splice(i,1);renderPhotos()};
+function reportHtml(){var title=audit.farm+' Farm Audit Report - '+audit.date;var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:Arial,sans-serif;margin:24px}h1{font-size:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px;vertical-align:top}.fail{background:#ffecec}.crit{font-weight:bold;color:#9b1c1c}img{max-width:340px;margin:6px;border-radius:8px}</style></head><body><h1>'+esc(title)+'</h1>'+makeSummary()+'<h2>Full checklist</h2><table><tr><th>#</th><th>Question</th><th>Answer</th><th>Comments / action</th><th>Photos</th></tr>';answers.forEach(function(a){html+='<tr class="'+(a.a==='NO'?'fail':'')+'"><td>'+a.n+'</td><td>'+esc(a.t)+(a.c?' <span class="crit">CRITICAL</span>':'')+'</td><td>'+esc(a.a||'')+'</td><td>'+esc(a.comments)+'<br>'+esc(a.action)+'<br>'+esc(a.due)+'</td><td>';(a.photos||[]).forEach(function(p){html+='<img src="'+p.data+'">'});html+='</td></tr>'});return html+'</table></body></html>'}
+window.saveReport=function(){var blob=new Blob([reportHtml()],{type:'text/html'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=safeName(audit.farm)+'_Farm_Audit_Report_'+audit.date+'.html';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000)};
+window.printReport=function(){var w=window.open('','_blank');w.document.write(reportHtml());w.document.close();setTimeout(function(){w.print()},500)};
+window.emailSummary=function(){var subject=encodeURIComponent(audit.farm+' Farm Audit Report - '+audit.date);var body=encodeURIComponent('Audit report completed.\n\nFarm: '+audit.farm+'\nDate: '+audit.date+'\nInspector: '+audit.inspector+'\nScore: '+score()+' / '+questions.length+'\nStatus: '+status()+'\n\nPlease attach the saved report file if required.');location.href='mailto:chris@crealy.co.uk,ben@weaversmeadow.co.uk,lowerburrowton@crealy.co.uk?subject='+subject+'&body='+body};
+window.restart=function(){show('startScreen')};
+window.openAdmin=function(){show('adminScreen');el('pinPanel').classList.remove('hidden');el('adminPanel').classList.add('hidden');el('pinInput').value=''};
+window.closeAdmin=function(){show('startScreen')};
+window.checkPin=function(){if(el('pinInput').value==='1234'){el('pinPanel').classList.add('hidden');el('adminPanel').classList.remove('hidden');renderAdmin()}else alert('Incorrect PIN')};
+function renderAdmin(){el('farmEditor').value=farms.slice().sort(function(a,b){return a.localeCompare(b)}).join('\n');var qd=el('questionEditor');qd.innerHTML='';questions.forEach(function(q,i){var div=document.createElement('div');div.className='adminq';div.innerHTML='<b>Question '+q.n+'</b><label><input type="checkbox" id="crit_'+i+'" '+(q.c?'checked':'')+'> Critical</label><textarea id="qtext_'+i+'">'+esc(q.t)+'</textarea>';qd.appendChild(div)})}
+window.saveFarms=function(){farms=el('farmEditor').value.split('\n').map(function(x){return x.trim()}).filter(Boolean).sort(function(a,b){return a.localeCompare(b)});save('pigAuditFarmsV27',farms);populateFarms();alert('Farms saved')};
+window.saveQuestions=function(){questions=questions.map(function(q,i){return {n:q.n,t:el('qtext_'+i).value.trim()||q.t,c:el('crit_'+i).checked}});save('pigAuditQuestionsV27',questions);alert('Questions saved')};
+window.resetQuestions=function(){if(confirm('Reset questions to defaults?')){questions=JSON.parse(JSON.stringify(defaultQuestions));save('pigAuditQuestionsV27',questions);renderAdmin()}};
+function init(){try{el('auditDate').value=iso(new Date());populateFarms();el('jsStatus').textContent='JavaScript running - app ready';el('jsStatus').className='status ready'}catch(e){el('jsStatus').textContent='Startup error: '+e.message;el('jsStatus').className='status'}}
+window.addEventListener('load',init);setTimeout(init,0);
+})();
+</script>
+</body>
+</html>
