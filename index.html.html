@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pig Unit Audit Wizard v28 SharePoint</title>
+<title>Pig Unit Audit Wizard v29</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#17202a;background:#f4f6f8}body{margin:0;background:#f4f6f8}.wrap{max-width:760px;margin:0 auto;padding:18px}.card{background:white;border-radius:18px;padding:20px;margin:12px 0;box-shadow:0 2px 14px rgba(0,0,0,.08)}h1{font-size:28px;margin:0 0 8px}h2{font-size:24px;margin:0 0 12px}.status{font-size:15px;padding:10px;border-radius:10px;background:#ffecec;color:#8a1f1f;margin:10px 0}.ready{background:#e9f8ee;color:#145c2c}.warn{background:#fff6db;color:#735700}label{font-weight:700;display:block;margin-top:14px;font-size:17px}select,input,textarea{width:100%;box-sizing:border-box;font-size:19px;padding:14px;border:1px solid #ccd3da;border-radius:12px;margin-top:6px;background:#fff}textarea{min-height:110px}.row{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:14px;padding:16px 18px;font-size:20px;font-weight:800;margin:8px 0;cursor:pointer}.primary{background:#1463ff;color:#fff}.yes{background:#16803c;color:#fff;flex:1}.no{background:#c9342f;color:#fff;flex:1}.secondary{background:#e8edf3;color:#111}.small{font-size:15px;padding:10px 12px}.danger{background:#a51f1f;color:#fff}.hidden{display:none!important}.progress{height:12px;border-radius:999px;background:#dfe5ea;overflow:hidden}.bar{height:100%;background:#1463ff;width:0}.qtext{font-size:25px;font-weight:800;line-height:1.25;margin:15px 0}.pill{display:inline-block;border-radius:999px;padding:7px 10px;background:#eef2f6;margin:4px 0;font-weight:700}.crit{background:#ffe0df;color:#8a1f1f}.photo{max-width:100%;border-radius:12px;margin-top:8px}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #e2e6ea;padding:8px;text-align:left;vertical-align:top}.footer{font-size:13px;color:#667;margin-top:14px}#adminBtn{margin-top:22px;width:100%;font-size:16px;padding:12px;background:#f1f3f5;color:#555}.adminq{border:1px solid #e1e5ea;border-radius:12px;padding:12px;margin:10px 0;background:#fafbfc}.adminq textarea{font-size:16px}.notice{font-size:16px;background:#fff6db;border-radius:12px;padding:12px;margin-top:10px}</style>
 </head>
@@ -20,7 +20,7 @@
 <label for="inspector">Inspector name</label><input id="inspector" autocomplete="name" placeholder="Enter inspector name">
 <label for="auditDate">Audit date</label><input id="auditDate" type="date">
 <button id="startBtn" class="btn primary" onclick="startAudit();return false;">Start Audit</button>
-<button class="btn secondary" onclick="openHistory();return false;">Audit History</button>
+<button class="btn secondary" onclick="openHistory();return false;">Previous Audits / Saved Reports</button>
 <div id="startMsg" class="notice hidden"></div>
 <button id="adminBtn" onclick="openAdmin();return false;">Admin</button>
 </div>
@@ -29,16 +29,16 @@
 <div class="row" style="align-items:center;justify-content:space-between"><span id="qCounter" class="pill"></span><span id="critPill" class="pill crit hidden">CRITICAL</span></div>
 <div class="progress"><div id="progBar" class="bar"></div></div>
 <div id="questionText" class="qtext"></div>
+<label>Photos for this question</label>
+<div class="row"><button class="btn secondary" onclick="document.getElementById('cameraInput').click();return false;">Take Photo</button><button class="btn secondary" onclick="document.getElementById('uploadInput').click();return false;">Upload Photo</button></div>
+<input id="cameraInput" class="hidden" type="file" accept="image/*" capture="environment" multiple onchange="addPhotos(this.files)">
+<input id="uploadInput" class="hidden" type="file" accept="image/*" multiple onchange="addPhotos(this.files)">
+<div id="photoPreview"></div>
 <div class="row"><button class="btn yes" onclick="answerYes();return false;">YES</button><button class="btn no" onclick="answerNo();return false;">NO</button></div>
 <div id="noPanel" class="hidden">
 <label>Problem / comments</label><textarea id="comments" placeholder="Describe the issue..."></textarea>
 <label>Action required</label><textarea id="action" placeholder="What needs doing?"></textarea>
 <label>Action by date</label><input id="dueDate" type="date">
-<label>Photos</label>
-<div class="row"><button class="btn secondary" onclick="document.getElementById('cameraInput').click();return false;">Take Photo</button><button class="btn secondary" onclick="document.getElementById('uploadInput').click();return false;">Upload Photo</button></div>
-<input id="cameraInput" class="hidden" type="file" accept="image/*" capture="environment" multiple onchange="addPhotos(this.files)">
-<input id="uploadInput" class="hidden" type="file" accept="image/*" multiple onchange="addPhotos(this.files)">
-<div id="photoPreview"></div>
 <button id="nextBtn" class="btn primary" onclick="nextAfterNo();return false;">Next</button>
 </div>
 <div class="row"><button class="btn secondary" onclick="goBack();return false;">Back</button></div>
@@ -47,13 +47,14 @@
 
 <div id="finishScreen" class="card hidden">
 <h2>Audit Complete</h2>
+<div class="notice">This audit is automatically saved under <b>Previous Audits / Saved Reports</b> on this device/browser.</div>
 <div id="summary"></div>
 <button class="btn primary" onclick="saveReport();return false;">Save Report File</button>
 <button class="btn primary" onclick="syncSharePoint();return false;">Save to SharePoint</button>
 <button class="btn secondary" onclick="printReport();return false;">Print / Save PDF</button>
 <button class="btn secondary" onclick="emailSummary();return false;">Prepare Email</button>
 <button class="btn secondary" onclick="restart();return false;">New Audit</button>
-<div class="footer">Photos are automatically reduced in size. Save locally, email, or use Save to SharePoint if your upload flow has been configured.</div>
+<div class="footer">Photos are automatically reduced in size. Completed audits are saved into Previous Audits on this device/browser. Use Save to SharePoint for central storage once the upload flow is configured.</div>
 </div>
 
 <div id="historyScreen" class="card hidden">
@@ -99,7 +100,7 @@ function safeName(s){return String(s||'Farm').replace(/[^a-z0-9]+/gi,'_').replac
 function populateFarms(){var fs=el('farmSelect');var current=fs.value;fs.innerHTML='<option value="">Select farm...</option>';farms.slice().sort(function(a,b){return a.localeCompare(b)}).forEach(function(f){var o=document.createElement('option');o.textContent=f;o.value=f;fs.appendChild(o)});if(current)fs.value=current}
 window.startAudit=function(){clearMsg('startMsg');var farm=el('farmSelect').value, inspector=el('inspector').value.trim(), date=el('auditDate').value;if(!farm){msg('startMsg','Please select a farm.');return}if(!inspector){msg('startMsg','Please enter inspector name.');return}if(!date){msg('startMsg','Please enter audit date.');return}audit={id:String(Date.now()),farm:farm,inspector:inspector,date:date};currentAuditId=audit.id;answers=questions.map(function(q){return {n:q.n,t:q.t,c:q.c,a:null,comments:'',action:'',due:'',photos:[]}});idx=0;renderQuestion();show('auditScreen')};
 function renderQuestion(){clearMsg('auditMsg');var q=questions[idx];el('qCounter').textContent='Question '+(idx+1)+' of '+questions.length;el('progBar').style.width=(idx/questions.length*100)+'%';el('questionText').textContent=q.t;el('critPill').classList.toggle('hidden',!q.c);el('noPanel').classList.add('hidden');el('comments').value=answers[idx].comments||'';el('action').value=answers[idx].action||'';el('dueDate').value=answers[idx].due||plus7(audit.date);renderPhotos()}
-window.answerYes=function(){answers[idx].a='YES';answers[idx].comments='';answers[idx].action='';answers[idx].due='';answers[idx].photos=[];advance()};
+window.answerYes=function(){answers[idx].a='YES';answers[idx].comments='';answers[idx].action='';answers[idx].due='';advance()};
 window.answerNo=function(){answers[idx].a='NO';if(!answers[idx].due)answers[idx].due=plus7(audit.date);el('dueDate').value=answers[idx].due;el('noPanel').classList.remove('hidden')};
 window.nextAfterNo=function(){var c=el('comments').value.trim();if(!c){msg('auditMsg','Please enter comments for a NO answer.');return}answers[idx].a='NO';answers[idx].comments=c;answers[idx].action=el('action').value.trim();answers[idx].due=el('dueDate').value;advance()};
 function advance(){if(idx<questions.length-1){idx++;renderQuestion()}else finish()}
@@ -111,7 +112,7 @@ function failedAll(){return answers.filter(function(a){return a.a==='NO'})}
 function status(){return failedCritical().length?'FAIL':'PASS'}
 function makeSummary(){var fails=failedAll();var html='<p><b>Farm:</b> '+audit.farm+'<br><b>Date:</b> '+audit.date+'<br><b>Inspector:</b> '+audit.inspector+'</p><p><b>Score:</b> '+score()+' / '+questions.length+'<br><b>Status:</b> '+status()+'</p>';if(fails.length){html+='<h3>Actions / Failures</h3><table><tr><th>#</th><th>Question</th><th>Comments</th><th>Due</th></tr>';fails.forEach(function(f){html+='<tr><td>'+f.n+(f.c?' CRITICAL':'')+'</td><td>'+esc(f.t)+'</td><td>'+esc(f.comments)+'</td><td>'+esc(f.due)+'</td></tr>'});html+='</table>'}else html+='<p>No failures recorded.</p>';return html}
 function esc(s){return String(s||'').replace(/[&<>]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]})}
-window.addPhotos=function(files){Array.prototype.slice.call(files||[]).forEach(function(file){compressPhoto(file,function(ph){answers[idx].photos.push(ph);renderPhotos()})});el('cameraInput').value='';el('uploadInput').value=''};
+window.addPhotos=function(files){var targetIdx=idx;var list=Array.prototype.slice.call(files||[]);if(!list.length)return;msg('auditMsg','Processing photo(s)...');list.forEach(function(file){compressPhoto(file,function(ph){if(!answers[targetIdx].photos)answers[targetIdx].photos=[];answers[targetIdx].photos.push(ph);if(targetIdx===idx){renderPhotos();clearMsg('auditMsg')}})});el('cameraInput').value='';el('uploadInput').value=''};
 function compressPhoto(file,cb){var r=new FileReader();r.onload=function(e){var img=new Image();img.onload=function(){var max=1200;var w=img.width,h=img.height;if(w>max||h>max){if(w>=h){h=Math.round(h*max/w);w=max}else{w=Math.round(w*max/h);h=max}}var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;var ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);var data=canvas.toDataURL('image/jpeg',0.72);cb({name:(file.name||'photo').replace(/\.[^.]+$/,'')+'.jpg',data:data,originalSize:file.size||0,optimisedSize:Math.round((data.length*3)/4),width:w,height:h})};img.onerror=function(){cb({name:file.name||'photo',data:e.target.result,originalSize:file.size||0,optimisedSize:file.size||0})};img.src=e.target.result};r.readAsDataURL(file)};
 function renderPhotos(){var p=el('photoPreview');p.innerHTML='';(answers[idx].photos||[]).forEach(function(ph,i){var d=document.createElement('div');d.innerHTML='<img class="photo" src="'+ph.data+'"><button class="btn small danger" onclick="removePhoto('+i+');return false;">Remove photo</button>';p.appendChild(d)})}
 window.removePhoto=function(i){answers[idx].photos.splice(i,1);renderPhotos()};
@@ -122,7 +123,7 @@ window.emailSummary=function(){var subject=encodeURIComponent(audit.farm+' Farm 
 
 function history(){return load('pigAuditHistoryV28',[])}
 function saveHistory(h){save('pigAuditHistoryV28',h)}
-function saveCurrentAudit(){try{var h=history();var rec={id:audit.id||String(Date.now()),farm:audit.farm,date:audit.date,inspector:audit.inspector,score:score(),status:status(),savedAt:new Date().toISOString(),audit:audit,answers:answers};var i=h.findIndex(function(x){return x.id===rec.id});if(i>=0)h[i]=rec;else h.unshift(rec);saveHistory(h.slice(0,200))}catch(e){}}
+function saveCurrentAudit(){try{var h=history();var rec={id:audit.id||String(Date.now()),farm:audit.farm,date:audit.date,inspector:audit.inspector,score:score(),status:status(),savedAt:new Date().toISOString(),audit:audit,answers:answers};var i=h.findIndex(function(x){return x.id===rec.id});if(i>=0)h[i]=rec;else h.unshift(rec);localStorage.setItem('pigAuditHistoryV28',JSON.stringify(h.slice(0,200)));return true}catch(e){alert('The audit report was created, but could not be saved into Previous Audits on this device. This is usually because the browser storage is full. Please use Save Report File or Save to SharePoint. Error: '+e.message);return false}}
 window.openHistory=function(){renderHistory();show('historyScreen')};
 function renderHistory(){var h=history();var box=el('historyList');if(!h.length){box.innerHTML='<p>No saved audits yet.</p>';return}var html='<table><tr><th>Date</th><th>Farm</th><th>Status</th><th>Action</th></tr>';h.forEach(function(r){html+='<tr><td>'+esc(r.date)+'</td><td>'+esc(r.farm)+'</td><td>'+esc(r.status)+'</td><td><button class="btn small secondary" onclick="viewHistory(\''+r.id+'\');return false;">View</button> <button class="btn small danger" onclick="deleteHistory(\''+r.id+'\');return false;">Delete</button></td></tr>'});html+='</table>';box.innerHTML=html}
 window.viewHistory=function(id){var r=history().find(function(x){return x.id===id});if(!r)return;audit=r.audit;answers=r.answers;currentAuditId=id;show('finishScreen');el('summary').innerHTML=makeSummary()};
